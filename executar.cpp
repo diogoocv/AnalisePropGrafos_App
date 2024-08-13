@@ -152,7 +152,7 @@ int bipartido(int n, vector<aresta>* LA) {
         coloracao[i] = BRANCO;
     }
 
-    // Utilizando uma BFS para verificar se o grafo é bipartido
+    // Utilizando uma BFS e coloração para verificar se o grafo é bipartido
     fila.push(s);                   // Adicionando o vértice inicial à fila
     corBFS[s] = CINZA;              // Vértice s descoberto
     coloracao[s] = auxColoracao;    // Vértice s colorido
@@ -194,6 +194,50 @@ int bipartido(int n, vector<aresta>* LA) {
     return 1;
 }
 
+// Verifica se um grafo é euleriano, retornando 1 caso afirmativo ou 0 caso contrário
+int euleriano(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+    
+    // Verificando se o grafo é desconexo
+    if(conexidadeGrafo(n, tipo, LA) == 0) {
+        return 0;
+    }
+    
+    // Percorrendo a LA
+    for(int u = 0; u < n; u++) {
+        int grau = 0;
+
+        // Calculando o grau do vértice u
+        for(auto v: LA[u]) {
+            grau++;
+        }
+
+        // Calculando o grau de entrada de u para vértices direcionados
+        if(tipo == direcionado) {
+            int grauEntrada = 0;
+
+            for(int j = 0; j < n; j++) {
+                for(auto k : LA[j]) {
+                    if(k.vertice == u) {
+                        grauEntrada++;
+                    }
+                }
+            }
+
+            // Verificando se o vértice possui grau de entrada != grau saída (grafo direcionado não é euleriano)
+            if(grau != grauEntrada) {
+                return 0;
+            }
+        } else {
+            // Verificando se o grau do vértice não é par (grafo nao_direcionado não é euleriano)
+            if(grau % 2 != 0) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
@@ -226,6 +270,10 @@ int main() {
     // Verificando se um grafo é bipartido
     int ehBipartido = bipartido(n, LA);
     cout << ehBipartido << endl;
+
+    // Verificando se um grafo é euleriano
+    int ehEuleriano = euleriano(n, tipo, LA);
+    cout << ehEuleriano << endl;
 
     return 0;
 }
