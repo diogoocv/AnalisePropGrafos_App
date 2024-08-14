@@ -3,6 +3,7 @@
 #include <queue>
 #include <algorithm>
 #include <iterator>
+#include <stack>
 
 using namespace std;
 
@@ -31,7 +32,6 @@ enum TipoGrafo{
 // Lê os dados do grafo passados pelo usuário e retorna sua lista de adjacência
 vector<aresta>* lerGrafo(int n, int m, enum TipoGrafo tipo, vector<aresta>* LA) {
     int id, u, v, w;            // Identificador da aresta, dois vértices conectados por ela e seu peso
-    int* auxId = new int[n];    // Vetor auxiliar para verificar id's repetidos
 
     for(int i = 0; i < m; i++) {
         cin >> id >> u >> v >> w;
@@ -98,7 +98,7 @@ int* bfsConexidade(int n, vector<aresta>* LA) {
     return cor;   
 }
 
-// Verifica a conexidade do grafo
+// Verifica, através de uma BFS, a conexidade do grafo
 // Retorna 1 se for conexo (nao_direcionado) ou fracamente conexo (direcionado) ou 0 se for desconexo
 int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
     int* cor = NULL;    // Vetor de cores dos vértices
@@ -138,7 +138,7 @@ int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 }
 
 
-// Verifica se o vértice é bipartido e retorna 1 caso seja verdadeiro ou 0 caso contrário
+// Verifica, através de uma BFS, se o vértice é bipartido e retorna 1 caso seja verdadeiro ou 0 caso contrário
 int bipartido(int n, vector<aresta>* LA) {
     int* corBFS = new int[n];       // Vetor de cores dos vértices indicando seu estado durante a BFS
     int* coloracao = new int[n];    // Vetor de cores dos vértices indicando sua partição através de sua coloração   
@@ -205,11 +205,8 @@ int euleriano(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
     // Percorrendo a LA
     for(int u = 0; u < n; u++) {
         int grau = 0;
-
-        // Calculando o grau do vértice u
-        for(auto v: LA[u]) {
-            grau++;
-        }
+        
+        grau = LA[u].size();    // Calculando o grau do vértice u
 
         // Calculando o grau de entrada de u para vértices direcionados
         if(tipo == direcionado) {
@@ -238,6 +235,57 @@ int euleriano(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
     return 1;
 }
 
+// Busca em profundidade recursiva para verificar se um grafo possui ciclo
+// Retorna 1 caso verdadeiro ou 0 caso contrário
+int dfsCiclo(int n, int u, int* cor, int* pai, vector<aresta>* LA) {
+    cor[u] = CINZA;     // Vértice u descoberto
+
+    // Percorrendo a vizinhança de u
+    for(auto v: LA[u]) {
+        if(cor[v.vertice] == BRANCO) {
+            pai[v.vertice] = u;         // Pai de v é u
+            // Chamando a dfs para v
+            if(dfsCiclo(n, v.vertice, cor, pai, LA) == 1) {
+                return 1;
+            }  
+        } else {
+            // Se for encontrado um vértice cinza diferente do pai de u, o grafo possui ciclo
+            if(cor[v.vertice] == CINZA and v.vertice != pai[u]) {
+                return 1;
+            }
+        }
+    }
+
+    cor[u] = PRETO;      // Vértice fechado
+
+    return 0;
+}
+
+// Verifica, através de uma DFS, se o grafo possui ciclo, retornando 1 caso verdadeiro ou 0 caso contrário
+int ciclo(int n, vector<aresta>* LA) {
+    int* cor = new int[n];  // Vetor de cores dos vértices indicando seu estado durante a DFS
+    int* pai = new int[n];  // Armazena o pai de cada vértice
+    stack<int> pilha;       // Pilha de vértices visitados durante a exploração do grafo
+
+    // Inicializando as estruturas auxiliares
+    for(int i = 0; i < n; i++) {
+        cor[i] = BRANCO;
+        pai[i] = -1;
+    }
+
+    // Executando a DFS para todos os vértices brancos
+    for(int u = 0; u < n; u++) {
+        if(cor[u] == BRANCO) {
+            // Se a dfsCiclo retornar 1, existe um ciclo no grafo
+            if(dfsCiclo(n, u, cor, pai, LA) == 1) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
@@ -263,17 +311,21 @@ int main() {
     // Lendo as arestas do grafo
     LA = lerGrafo(n, m, tipo, LA);
 
-    // Verificando a conexidade do grafo
+    // Retornando se um grafo é conexo
     int conexidade = conexidadeGrafo(n, tipo, LA);
     cout << conexidade << endl;
 
-    // Verificando se um grafo é bipartido
+    // Retornando se um grafo é bipartido
     int ehBipartido = bipartido(n, LA);
     cout << ehBipartido << endl;
 
-    // Verificando se um grafo é euleriano
+    // Retornando se um grafo é euleriano
     int ehEuleriano = euleriano(n, tipo, LA);
     cout << ehEuleriano << endl;
+
+    // Retornando se um grafo possui ciclo
+    int possuiCiclo = ciclo(n, LA);
+    cout << possuiCiclo;
 
     return 0;
 }
