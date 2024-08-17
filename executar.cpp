@@ -1,3 +1,13 @@
+/*
+ *  GCC 218 - Algoritmos em Grafos
+ *  Trabalho Prático
+ * 
+ *  Diogo Oliveira Carvalho - 202120533
+ *  Lucas Meira
+ *  Bruno
+ * 
+*/
+
 #include <iostream>
 #include <vector>
 #include <queue>
@@ -68,15 +78,8 @@ vector<aresta>* lerGrafo(int n, int m, enum TipoGrafo tipo, vector<aresta>* LA) 
 }
 
 // Busca em Largura utilizada para verificar a conexidade do grafo
-int* bfsConexidade(int n, vector<aresta>* LA) {              
-    int* cor = new int[n];  // Vetor de cores dos vértices
+int* bfsConexidade(int n, int s, int* cor, vector<aresta>* LA) {              
     queue<int> fila;        // Fila de vértices visitados durante a exploração do grafo
-    int s = 0;              // Vértice inicial da busca
-    
-    // Inicializando todos os vértices com a cor branca
-    for(int i = 0; i < n; i++) {
-        cor[i] = BRANCO;    
-    }
 
     fila.push(s);           // Adicionando o vértice de origem à fila para iniciar a busca
     cor[s] = CINZA;          // Vértice de origem descoberto
@@ -101,7 +104,13 @@ int* bfsConexidade(int n, vector<aresta>* LA) {
 // Verifica, através de uma BFS, a conexidade do grafo
 // Retorna 1 se for conexo (nao_direcionado) ou fracamente conexo (direcionado) ou 0 se for desconexo
 int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
-    int* cor = NULL;    // Vetor de cores dos vértices
+    int* cor = new int[n];  // Vetor de cores dos vértices
+    int s = 0;              // Vértice de origem da BFS
+
+    // Inicializando todos os vértices com a cor branca
+    for(int i = 0; i < n; i++) {
+        cor[i] = BRANCO;    
+    }
 
     // Se o grafo for direcionado, para cada aresta em (u,v) é adicionada uma aresta (v,u), caso não exista
     if(tipo == direcionado) {
@@ -119,11 +128,11 @@ int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
                 LA_Aux[v.vertice].push_back({v.id, u, v.peso});     // Criando a aresta (v,u) na LA_Aux
             }
         }
-        cor = bfsConexidade(n, LA_Aux);    // Passando a LA_Aux como parâmetro para a BFS em caso de grafos direcionados
+        cor = bfsConexidade(n, s, cor, LA_Aux);    // Passando a LA_Aux como parâmetro para a BFS em caso de grafos direcionados
     }
 
     if(tipo == nao_direcionado) {
-        cor = bfsConexidade(n, LA);        // Passando a LA como parâmetro para a BFS em caso de grafos nao_direcionados
+        cor = bfsConexidade(n, s, cor, LA);        // Passando a LA como parâmetro para a BFS em caso de grafos nao_direcionados
     }
 
     // Percorrendo a lista de cores dos vértices
@@ -138,13 +147,19 @@ int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 }
 
 
-// Verifica, através de uma BFS, se o vértice é bipartido e retorna 1 caso seja verdadeiro ou 0 caso contrário
-int bipartido(int n, vector<aresta>* LA) {
+// Verifica, através de uma BFS, se um grafo nao_direcionado é bipartido e retorna 1 caso seja verdadeiro ou 0 caso contrário
+// Se o grafo não for nao_direcionado, retorna 0
+int bipartido(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
     int* corBFS = new int[n];       // Vetor de cores dos vértices indicando seu estado durante a BFS
     int* coloracao = new int[n];    // Vetor de cores dos vértices indicando sua partição através de sua coloração   
     int auxColoracao = AZUL;        // Variável auxiliar para colorir o grafo
     queue<int> fila;                // Fila de vértices explorados durante a BFS
     int s = 0;                      // Vértice inicial da busca
+
+
+    if(tipo != nao_direcionado) {
+        return 0;
+    }
 
     // Inicializando todos os vértices como brancos
     for(int i = 0; i < n; i++) {
@@ -184,9 +199,9 @@ int bipartido(int n, vector<aresta>* LA) {
         }
     }
 
-    // Verificando se existem vértices não coloridos, indicando mais de duas partições
+    // Verificando se existe um vértice não colorido, indicando mais de duas partições
     for(int i = 0; i < n; i ++) {
-        if(coloracao[s] == BRANCO) {
+        if(coloracao[i] == BRANCO) {
             return 0;
         }
     }
@@ -286,6 +301,41 @@ int ciclo(int n, vector<aresta>* LA) {
     return 0;
 }
 
+// Calcula a quantidade de componentes conexas no grafo através de uma BFS (apenas grafos nao_direcionados)
+// Retorna a quantidade de componentes conexas ou -1 caso o grafo não seja nao_direcionado
+int qtdComponentesConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+    int contComponentes = 0;    // Contador para verificar a quantidade de componentes no grafo
+    int* cor = new int[n];      // Vetor de cores dos vértices
+    int s = 0;                  // Vértice de origem da BFS
+
+    // Verificando se o grafo não é nao_direcionado  
+    if(tipo != nao_direcionado) {
+        return -1;
+    } 
+
+    // Inicializando todos os vértices com a cor branca
+    for(int i = 0; i < n; i++) {
+        cor[i] = BRANCO;    
+    }
+
+    bool verticeNaoVisitado = true;
+    while(verticeNaoVisitado) {
+        cor = bfsConexidade(n, s, cor, LA);     // Rodando uma BFS a partir do 1° vértice não visitado (ordem lexicográfica)
+        contComponentes++;                      // Incrementando a quantidade de componentes conexas
+
+        for(int u = 0; u < n; u++) {
+            if(cor[u] == BRANCO) {
+                s = u;
+                verticeNaoVisitado = true;
+                u = n;
+            } else {
+                verticeNaoVisitado = false;
+            }
+        }
+    }
+    return contComponentes;
+}
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
@@ -316,7 +366,7 @@ int main() {
     cout << conexidade << endl;
 
     // Retornando se um grafo é bipartido
-    int ehBipartido = bipartido(n, LA);
+    int ehBipartido = bipartido(n, tipo, LA);
     cout << ehBipartido << endl;
 
     // Retornando se um grafo é euleriano
@@ -325,7 +375,10 @@ int main() {
 
     // Retornando se um grafo possui ciclo
     int possuiCiclo = ciclo(n, LA);
-    cout << possuiCiclo;
+    cout << possuiCiclo << endl;
+
+    int componentesConexas = qtdComponentesConexas(n, tipo, LA);
+    cout << componentesConexas << endl;
 
     return 0;
 }
