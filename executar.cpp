@@ -78,7 +78,7 @@ vector<aresta>* lerGrafo(int n, int m, enum TipoGrafo tipo, vector<aresta>* LA) 
 }
 
 // Busca em Largura utilizada para verificar a conexidade do grafo
-int* bfsConexidade(int n, int s, int* cor, vector<aresta>* LA) {              
+int* bfsConexidade(int s, int* cor, vector<aresta>* LA) {              
     queue<int> fila;        // Fila de vértices visitados durante a exploração do grafo
 
     fila.push(s);           // Adicionando o vértice de origem à fila para iniciar a busca
@@ -128,11 +128,11 @@ int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
                 LA_Aux[v.vertice].push_back({v.id, u, v.peso});     // Criando a aresta (v,u) na LA_Aux
             }
         }
-        cor = bfsConexidade(n, s, cor, LA_Aux);    // Passando a LA_Aux como parâmetro para a BFS em caso de grafos direcionados
+        cor = bfsConexidade(s, cor, LA_Aux);    // Passando a LA_Aux como parâmetro para a BFS em caso de grafos direcionados
     }
 
     if(tipo == nao_direcionado) {
-        cor = bfsConexidade(n, s, cor, LA);        // Passando a LA como parâmetro para a BFS em caso de grafos nao_direcionados
+        cor = bfsConexidade(s, cor, LA);        // Passando a LA como parâmetro para a BFS em caso de grafos nao_direcionados
     }
 
     // Percorrendo a lista de cores dos vértices
@@ -303,7 +303,7 @@ int ciclo(int n, vector<aresta>* LA) {
 
 // Calcula a quantidade de componentes conexas no grafo através de uma BFS (apenas grafos nao_direcionados)
 // Retorna a quantidade de componentes conexas ou -1 caso o grafo não seja nao_direcionado
-int qtdComponentesConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+int qtdCompConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
     int contComponentes = 0;    // Contador para verificar a quantidade de componentes no grafo
     int* cor = new int[n];      // Vetor de cores dos vértices
     int s = 0;                  // Vértice de origem da BFS
@@ -318,11 +318,13 @@ int qtdComponentesConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
         cor[i] = BRANCO;    
     }
 
+    // Executando uma BFS até que todos os vértices sejam encontrados
     bool verticeNaoVisitado = true;
     while(verticeNaoVisitado) {
-        cor = bfsConexidade(n, s, cor, LA);     // Rodando uma BFS a partir do 1° vértice não visitado (ordem lexicográfica)
+        cor = bfsConexidade(s, cor, LA);        // Rodando uma BFS a partir do 1° vértice não visitado (ordem lexicográfica)
         contComponentes++;                      // Incrementando a quantidade de componentes conexas
 
+        // Percorrendo o vetor de cores e verificando se existem vértices brancos
         for(int u = 0; u < n; u++) {
             if(cor[u] == BRANCO) {
                 s = u;
@@ -333,7 +335,108 @@ int qtdComponentesConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
             }
         }
     }
+
     return contComponentes;
+}
+
+// DFS para o tempo de fechamento dos vértices durante a busca para encontrar a quantidade de componentes fortemente conexas
+void dfsCompFortConexas(int s, int &t, int* cor, int* f, vector<aresta>* LA) {
+    stack<int> pilha;   // Pilha de vértices descobertos durante a busca
+
+    cor[s] = CINZA;     // Vértice s descoberto
+    pilha.push(s);      // Empilhando s
+
+    // Executando a DFS na LA
+    while(!pilha.empty()) {
+        bool vBrancoEncontrado = false;     // Auxiliar para armazenar se um vértice branco foi encontrado na LA[u]
+        int u = pilha.top();                // u recebe o vértice do topo da pilha 
+        
+        // Percorrendo a LA de u
+        for(auto v: LA[u]) {
+            if(cor[v.vertice] == BRANCO) {
+                t++;                        // Incrementando o tempo da busca
+                cor[v.vertice] = CINZA;     // Vértice v descoberto
+                pilha.push(v.vertice);      // Empilhando v 
+                vBrancoEncontrado = true; 
+            }
+        }
+
+        // Verificando se não foram encontrados vizinhos não visitados na LA de u
+        if(!vBrancoEncontrado) {
+            t++;                // Incrementando o tempo da busca
+            cor[u] = PRETO;     // Vértice u fechado
+            f[u] = t;           // Tempo de fechamento de u
+            pilha.pop();        // Retirando u da pilha
+        }   
+    }
+}
+
+// Calcula a quantidade de componentes fortemente conexas no grafo através de uma DFS (apenas grafos direcionados)
+// Retorna a quantidade de componentes fortemente conexas ou -1 caso o grafo não seja direcionado
+int qtdCompFortConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+    vector<aresta>* LA_Transposta = new vector<aresta>[n];      // Grafo transposto do grafo passado (LA)
+    int* cor = new int[n];      // Vetor de cores dos vértices
+    int* f = new int[n];        // Armazena o tempo de fechamento dos vértices durante a DFS   
+    int s = 0;                  // Vértice de origem da busca
+    int t = 0;                  // Auxiliar que armazena o tempo da busca
+    int contComp = 0;               // Contador de componentes
+
+    // Verificando se o grafo não é direcionado
+    if(tipo != direcionado) {
+        return -1;
+    }
+
+    // Calculando o grafo transposto
+    for(int u = 0; u < n; u++) {
+        for(auto v: LA[u]) {
+            LA_Transposta[v.vertice].push_back({v.id, u, v.peso});
+        }
+    } 
+
+    // Inicializando todos os vértices como brancos
+    for(int i = 0; i < n; i++) {
+        cor[i] = BRANCO;
+    }
+
+    // Rodando a DFS na LA para descobrir os tempos de fechamento
+    for(int u = 0; u < n; u++) {
+        if(cor[u] == BRANCO) {
+            s = u;
+            dfsCompFortConexas(s, t, cor, f, LA);
+        }
+    }
+    
+    // Re-inicializando todos os vértices como brancos
+    for(int i = 0; i < n; i++) {
+        cor[i] = BRANCO;
+    }
+
+
+    // Executando a DFS NA LA_Transposta por ordem decrescente de fechamento
+    bool vBrancoEncontrado = true;
+    while(vBrancoEncontrado) {
+        vBrancoEncontrado = false;
+        int maiorT = -1;            // Armazena o maior tempo de fechamento entra os vértices brancos
+
+        // Procurando pelo vértice branco com maior tempo de fechamento
+        for(int u = 0; u < n; u++) {
+            if(cor[u] == BRANCO) {
+            vBrancoEncontrado = true;
+                if(f[u] > maiorT) {
+                    maiorT = f[u];      // Atualizando o maior tempo de fechamento
+                    s = u;              // u será o vértice de origem da DFS
+                }
+            }
+        }
+
+        // Executando a DFS a partir de s
+        if(vBrancoEncontrado) {
+            dfsCompFortConexas(s, t, cor, f, LA_Transposta);
+            contComp++;
+        }
+    }
+
+    return contComp;
 }
 
 int main() {
@@ -377,8 +480,13 @@ int main() {
     int possuiCiclo = ciclo(n, LA);
     cout << possuiCiclo << endl;
 
-    int componentesConexas = qtdComponentesConexas(n, tipo, LA);
-    cout << componentesConexas << endl;
+    // Retornando a quantidade de componentes conexas de um grafo
+    int compConexas = qtdCompConexas(n, tipo, LA);
+    cout << compConexas << endl;
+
+    // Retornando a quantidade de componentes fortemente conexas de um grafo
+    int compFortConexas = qtdCompFortConexas(n, tipo, LA);
+    cout << compFortConexas;
 
     return 0;
 }
