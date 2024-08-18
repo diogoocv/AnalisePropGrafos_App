@@ -650,6 +650,41 @@ queue<int> dfsArvore(int n, vector<aresta>* LA) {
     return filaArvore;
 }    
 
+// BFS para calcular a árvore em largura do grafo
+// Retorna uma fila contendo o id das arestas presentes na árvore em largura partindo do vértice 0
+queue<int>bfsArvore(int n, vector<aresta>* LA) {
+    int* cor = new int[n];      // Cor dos vértices durante a busca
+    queue<int> filaBfs;         // Fila que armazena os vértices visitados durante a busca
+    queue<int> filaArvore;      // Fila que armazena o id das arestas pertencentes à arvore de largura
+    int s = 0;                  // vértice de origem da busca
+
+    // Inicializando o vetor de cores
+    for(int i = 0; i < n; i++) {
+        cor[i] = BRANCO;
+    }
+
+    cor[s] = CINZA;     // Visitando s
+    filaBfs.push(s);    // Enfileirando s
+
+    while(!filaBfs.empty()) {
+        int u = filaBfs.front();
+
+        // Percorrendo a vizinhança de u e procurando por vértices não visitados
+        for(auto uv: LA[u]) {
+            if(cor[uv.v] == BRANCO) {
+                cor[uv.v] = CINZA;          // Visitando uv
+                filaBfs.push(uv.v);         // Adicionando o vértice v à fila da busca
+                filaArvore.push(uv.id);     // Adicionando o id de uv à árvore de largura
+            }
+        }
+
+        cor[u] = PRETO;     // Fechando o vértice u
+        filaBfs.pop();      // Retirando u da fila
+    }
+
+    return filaArvore;
+}
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
@@ -723,8 +758,12 @@ int main() {
     delete[] idArestasPonte;
 
     // (8) Retornando o id das arestas da árvore em profundindade
-    queue<int> filaArvore = dfsArvore(n, LA);
-    ImprimirFilaInt(filaArvore);
+    queue<int> filaArvoreProfundidade = dfsArvore(n, LA);
+    ImprimirFilaInt(filaArvoreProfundidade);
+
+    // (9) Retornando o id das arestas da árvore em largura
+    queue<int> filaArvoreLargura = bfsArvore(n, LA);
+    ImprimirFilaInt(filaArvoreLargura);
 
     return 0;
 }
