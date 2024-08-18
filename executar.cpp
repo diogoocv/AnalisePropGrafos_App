@@ -17,6 +17,8 @@
 
 using namespace std;
 
+#define NAO_VISITADO -1     // Vértice não visitado
+
 // Cores que representam o estado dos vértices durante uma busca
 #define BRANCO 0     // Vértice não descoberto
 #define CINZA 1      // Vértice descoberto
@@ -29,7 +31,8 @@ using namespace std;
 // Representa uma aresta em uma lista de adjacência
 struct aresta{
     int id;             // Código identificador única da aresta
-    int vertice;        // Vértice a quem a aresta se liga 
+    int u;              // Primeiro vértice a quem a aresta se liga
+    int v;              // Segundo vértice a quem a aresta se liga 
     int peso;           // Peso da aresta
 };
 
@@ -62,15 +65,15 @@ vector<aresta>* lerGrafo(int n, int m, enum TipoGrafo tipo, vector<aresta>* LA) 
 
         // Evitando a leitura de arestas repetidas
         for(auto i: LA[u]) {
-            if(i.vertice == v) {
+            if(i.v == v) {
                 continue;
             }
         }
 
         // Adicionando as arestas à lista de adjacência
-        LA[u].push_back({id, v, w});
+        LA[u].push_back({id, u, v, w});         // Adicionando a aresta (u,v)
         if(tipo == nao_direcionado) {
-            LA[v].push_back({id, u, w});
+            LA[v].push_back({id, v, u, w});     // Adicionando a aresta (v,u)
         }  
     }
 
@@ -78,7 +81,7 @@ vector<aresta>* lerGrafo(int n, int m, enum TipoGrafo tipo, vector<aresta>* LA) 
 }
 
 // Busca em Largura utilizada para verificar a conexidade do grafo
-int* bfsConexidade(int s, int* cor, vector<aresta>* LA) {              
+void bfsConexidade(int s, int* cor, vector<aresta>* LA) {              
     queue<int> fila;        // Fila de vértices visitados durante a exploração do grafo
 
     fila.push(s);           // Adicionando o vértice de origem à fila para iniciar a busca
@@ -90,15 +93,13 @@ int* bfsConexidade(int s, int* cor, vector<aresta>* LA) {
         fila.pop();             // Retirando o vértice u da fila
 
         // Percorrendo a lista de adjacência de u e procurando por vértices brancos
-        for(auto v: LA[u]) {
-            if(cor[v.vertice] == BRANCO) {
-                cor[v.vertice] = CINZA;   // Vértice v descoberto
-                fila.push(v.vertice);     // Vértice v adicionado à fila
+        for(auto uv: LA[u]) {
+            if(cor[uv.v] == BRANCO) {
+                cor[uv.v] = CINZA;   // Vértice v descoberto
+                fila.push(uv.v);     // Vértice v adicionado à fila
             }
         }
-    }
-
-    return cor;   
+    }  
 }
 
 // Verifica, através de uma BFS, a conexidade do grafo
@@ -117,22 +118,30 @@ int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
         vector<aresta>* LA_Aux = new vector<aresta>[n];   // Lista de adjacência auxiliar para verificar conexidade fraca
         
         for(int u = 0; u < n; u++) {
-            for(auto v: LA[u]) {
-                LA_Aux[u].push_back(v);   // Adicionando a aresta (u,v) na LA_Aux
+            for(auto uv: LA[u]) {
+                LA_Aux[u].push_back(uv);   // Adicionando a aresta (u,v) na LA_Aux
+
                 // Verificando se já existe a aresta (v,u) na LA
-                for(auto i: LA[v.vertice]) {
-                    if(i.vertice == u) {
-                        continue;
+                bool vuExiste = false;
+                for(auto i: LA[uv.v]) {
+                    if(i.v == u) {
+                        vuExiste = true;
                     }
                 }
-                LA_Aux[v.vertice].push_back({v.id, u, v.peso});     // Criando a aresta (v,u) na LA_Aux
+
+                if(!vuExiste) {
+                    LA_Aux[uv.v].push_back({uv.id, uv.v, u, uv.peso});     // Criando a aresta (v,u) na LA_Aux
+                }
+                
             }
         }
-        cor = bfsConexidade(s, cor, LA_Aux);    // Passando a LA_Aux como parâmetro para a BFS em caso de grafos direcionados
+        bfsConexidade(s, cor, LA_Aux);    // Passando a LA_Aux como parâmetro para a BFS em caso de grafos direcionados
+
+        delete[] LA_Aux;
     }
 
     if(tipo == nao_direcionado) {
-        cor = bfsConexidade(s, cor, LA);        // Passando a LA como parâmetro para a BFS em caso de grafos nao_direcionados
+        bfsConexidade(s, cor, LA);        // Passando a LA como parâmetro para a BFS em caso de grafos nao_direcionados
     }
 
     // Percorrendo a lista de cores dos vértices
@@ -142,6 +151,8 @@ int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
             return 0;
         }
     }
+
+    delete[] cor;
 
     return 1;
 }
@@ -185,14 +196,14 @@ int bipartido(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
         }
 
         // Percorrendo a LA de u e procurando por vértices brancos
-        for(auto v: LA[u]) {
-            if(corBFS[v.vertice] == BRANCO) {
-                corBFS[v.vertice] = CINZA;                  // Vértice v descoberto
-                coloracao[v.vertice] = auxColoracao;        // Colorindo o vértice v 
-                fila.push(v.vertice);                       // Adicionando v à fila
+        for(auto uv: LA[u]) {
+            if(corBFS[uv.v] == BRANCO) {
+                corBFS[uv.v] = CINZA;                  // Vértice v descoberto
+                coloracao[uv.v] = auxColoracao;        // Colorindo o vértice v 
+                fila.push(uv.v);                       // Adicionando v à fila
             } else {
                 // Verificando se v tem a mesma cor de u
-                if(coloracao[v.vertice] == coloracao[u]) {
+                if(coloracao[uv.v] == coloracao[u]) {
                     return 0;
                 }
             }
@@ -205,6 +216,9 @@ int bipartido(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
             return 0;
         }
     }
+
+    delete[] corBFS;
+    delete[] coloracao;
 
     return 1;
 }
@@ -229,7 +243,7 @@ int euleriano(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 
             for(int j = 0; j < n; j++) {
                 for(auto k : LA[j]) {
-                    if(k.vertice == u) {
+                    if(k.v == u) {
                         grauEntrada++;
                     }
                 }
@@ -256,16 +270,16 @@ int dfsCiclo(int n, int u, int* cor, int* pai, vector<aresta>* LA) {
     cor[u] = CINZA;     // Vértice u descoberto
 
     // Percorrendo a vizinhança de u
-    for(auto v: LA[u]) {
-        if(cor[v.vertice] == BRANCO) {
-            pai[v.vertice] = u;         // Pai de v é u
+    for(auto uv: LA[u]) {
+        if(cor[uv.v] == BRANCO) {
+            pai[uv.v] = u;         // Pai de v é u
             // Chamando a dfs para v
-            if(dfsCiclo(n, v.vertice, cor, pai, LA) == 1) {
+            if(dfsCiclo(n, uv.v, cor, pai, LA) == 1) {
                 return 1;
             }  
         } else {
             // Se for encontrado um vértice cinza diferente do pai de u, o grafo possui ciclo
-            if(cor[v.vertice] == CINZA and v.vertice != pai[u]) {
+            if(cor[uv.v] == CINZA and uv.v != pai[u]) {
                 return 1;
             }
         }
@@ -298,6 +312,9 @@ int ciclo(int n, vector<aresta>* LA) {
         }
     }
 
+    delete[] cor;
+    delete[] pai;
+ 
     return 0;
 }
 
@@ -321,7 +338,7 @@ int qtdCompConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
     // Executando uma BFS até que todos os vértices sejam encontrados
     bool verticeNaoVisitado = true;
     while(verticeNaoVisitado) {
-        cor = bfsConexidade(s, cor, LA);        // Rodando uma BFS a partir do 1° vértice não visitado (ordem lexicográfica)
+        bfsConexidade(s, cor, LA);              // Rodando uma BFS a partir do 1° vértice não visitado (ordem lexicográfica)
         contComponentes++;                      // Incrementando a quantidade de componentes conexas
 
         // Percorrendo o vetor de cores e verificando se existem vértices brancos
@@ -336,11 +353,13 @@ int qtdCompConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
         }
     }
 
+    delete[] cor;
+
     return contComponentes;
 }
 
 // DFS para o tempo de fechamento dos vértices durante a busca para encontrar a quantidade de componentes fortemente conexas
-void dfsCompFortConexas(int s, int &t, int* cor, int* f, vector<aresta>* LA) {
+void dfsCompFortConexas(int s, int& t, int* cor, int* f, vector<aresta>* LA) {
     stack<int> pilha;   // Pilha de vértices descobertos durante a busca
 
     cor[s] = CINZA;     // Vértice s descoberto
@@ -352,11 +371,11 @@ void dfsCompFortConexas(int s, int &t, int* cor, int* f, vector<aresta>* LA) {
         int u = pilha.top();                // u recebe o vértice do topo da pilha 
         
         // Percorrendo a LA de u
-        for(auto v: LA[u]) {
-            if(cor[v.vertice] == BRANCO) {
+        for(auto uv: LA[u]) {
+            if(cor[uv.v] == BRANCO) {
                 t++;                        // Incrementando o tempo da busca
-                cor[v.vertice] = CINZA;     // Vértice v descoberto
-                pilha.push(v.vertice);      // Empilhando v 
+                cor[uv.v] = CINZA;     // Vértice v descoberto
+                pilha.push(uv.v);      // Empilhando v 
                 vBrancoEncontrado = true; 
             }
         }
@@ -379,7 +398,7 @@ int qtdCompFortConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
     int* f = new int[n];        // Armazena o tempo de fechamento dos vértices durante a DFS   
     int s = 0;                  // Vértice de origem da busca
     int t = 0;                  // Auxiliar que armazena o tempo da busca
-    int contComp = 0;               // Contador de componentes
+    int contComp = 0;           // Contador de componentes
 
     // Verificando se o grafo não é direcionado
     if(tipo != direcionado) {
@@ -388,8 +407,8 @@ int qtdCompFortConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 
     // Calculando o grafo transposto
     for(int u = 0; u < n; u++) {
-        for(auto v: LA[u]) {
-            LA_Transposta[v.vertice].push_back({v.id, u, v.peso});
+        for(auto uv: LA[u]) {
+            LA_Transposta[uv.v].push_back({uv.id, uv.v, u, uv.peso});
         }
     } 
 
@@ -436,7 +455,124 @@ int qtdCompFortConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
         }
     }
 
+    delete[] cor;
+    delete[] f;
+
     return contComp;
+}
+
+// Algoritmo de Tarjan para detecção de arestas ponte e vértices de articulação
+void tarjan(int u, int* d, int* low, int* pai, int& t, int& qtdFilhosRaiz, int raiz, int& contArtic, int& contPontes, vector<aresta>* LA, bool* articulacoes, bool* pontes) {
+    d[u] = t;       // Tempo de descoberta de s = t
+    low[u] = t;     // Low de s = t
+    t++;            // Incrementando o tempo da busca
+
+    // Percorrendo a lista de adjacência de u
+    for(auto uv: LA[u]) {
+        if(d[uv.v] == NAO_VISITADO) {
+            // Visitando vértice u
+            pai[uv.v] = u;
+            // Verificando se u é a raiz
+            if(u == raiz) {
+                qtdFilhosRaiz++;        // Incrementando a quantidade de filhos da raiz
+            }
+
+            // Executando Tarjan para o vértice v (em profundidade)
+            tarjan(uv.v, d, low, pai, t, qtdFilhosRaiz, raiz, contArtic, contPontes, LA, articulacoes, pontes);
+
+            // Verificando se u é um vértice de articulação
+            if(low[uv.v] >= d[u]) {
+                articulacoes[u] = true;     // Adicionando o vértice u no vetor de articulações
+                contArtic++;                // Incrementando o contador de articulações
+            }
+
+            // Verificando se (u,v) é uma aresta ponte
+            if(low[uv.v] > d[u]) {
+                pontes[uv.id] = true;       // Adicionando a aresta no vetor de pontes
+                contPontes++;               // Incrementando o contador de pontes
+            }
+
+            low[u] = min(low[u], low[uv.v]);       // Atualizando o low de u caso o low de v seja menor que o dele
+        } else {
+            // Verificando se o vértice encontrado não é o pai de u
+            if(uv.v != pai[u]) {
+                low[u] = min(low[u], d[uv.v]);     // Atualizando o low de u caso seu low seja maior que o tempo de descoberta de v e v não seja seu pai
+            }
+        }
+    }
+}
+
+// Verifica os vértices de articulação e arestas ponte do grafo (apenas nao_direcionado)
+// Calcula-os através do algoritmo de Tarjan
+void articulacoesEPontes(int n, int m, enum TipoGrafo tipo, int& contArtic, int& contPontes, int** verticesArticulacao, int** idArestasPonte, vector<aresta>* LA) {    
+    
+    // Verificando se o grafo é nao_direcionado
+    if(tipo == nao_direcionado) {
+        int* low = new int[n];              // Vetor que armazena os menores tempos de descoberta de arestas que abracam um vertice
+        int* d = new int[n];                // Vetor que armazena o tempo de descoberta do vértice
+        int* pai = new int[n];              // Vetor que armazena o pai de cada vértice
+        int t = 0;                          // Auxiliar que armazena o tempo da busca
+        int qtdFilhosRaiz = 0;              // Auxiliar que armazena a quantidade de filhos da raiz da busca
+        bool* articulacoes = new bool[n];   // Armazena os vértices de articulação do grafo
+        bool* pontes = new bool[m];         // Armazena as arestas ponte do grafo
+
+        contArtic = 0;                      // Auxiliar para contar o número de vértices de articulação
+        contPontes = 0;                     // Auxiliar para contar o número de arestas ponte
+
+        // Inicializando as estruturas necessárias para encontrar as articulações
+        for(int i = 0; i < n; i++) {
+            low[i] = NAO_VISITADO;
+            d[i] = NAO_VISITADO;
+            pai[i] = -1;
+            articulacoes[i] = NULL;
+        }
+
+        for(int i = 0; i < m; i++) {
+            pontes[i] = false;
+        }
+
+        // Executando o algoritmo de Tarjan até que todos os vértices sejam visitados
+        for(int i = 0; i < n; i++) {
+            if(d[i] == NAO_VISITADO) {
+                qtdFilhosRaiz = 0;
+                tarjan(i, d, low, pai, t, qtdFilhosRaiz, i, contArtic, contPontes, LA, articulacoes, pontes);
+                
+                // Verificando se a raiz é um vértice de articulação
+                if(qtdFilhosRaiz > 1) {
+                    articulacoes[i] = true;
+                }
+            }
+        }
+
+        // Armazenando no vetor passado por referência os vértices de articulação 
+        if(contArtic > 0) {
+            *verticesArticulacao = new int[contArtic-1];
+            int auxCont = 0;
+            for(int i = 0; i < n; i++) {
+                if(articulacoes[i]) {
+                    (*verticesArticulacao)[auxCont] = i;
+                    auxCont++;
+                }
+            }
+        }
+        // Armazenando no vetor passado por referência os id's das arestas ponte
+        if(contPontes > 0) {
+            *idArestasPonte = new int[contPontes-1];
+            int auxCont = 0;
+            for(int i = 0; i < m; i++) {
+                if(pontes[i]) {
+                    (*idArestasPonte)[auxCont] = i;
+                    auxCont++;
+                }
+            }
+        }
+
+        delete[] low;
+        delete[] d;
+        delete[] pai;
+        delete[] articulacoes;
+        delete[] pontes;
+    }
 }
 
 int main() {
@@ -486,7 +622,43 @@ int main() {
 
     // Retornando a quantidade de componentes fortemente conexas de um grafo
     int compFortConexas = qtdCompFortConexas(n, tipo, LA);
-    cout << compFortConexas;
+    cout << compFortConexas << endl;
+
+    // Calculando vértices de articulação e arestas ponte
+    int* verticesArticulacao = NULL;
+    int* idArestasPonte = NULL;
+    int contArtic = 0;
+    int contPontes = 0;
+    articulacoesEPontes(n, m, tipo, contArtic, contPontes, &verticesArticulacao, &idArestasPonte, LA);
+    // Retornando vértices de articulação
+    if(contArtic > 0) {
+        cout << verticesArticulacao[0];
+        if(contArtic > 1) {
+            for(int i = 1; i < contArtic; i++) {
+                cout << " " << verticesArticulacao[i];
+            }
+        }
+    } else {
+        cout << -1;
+    }
+    cout << endl;
+
+    // Retornando o id das arestas ponte
+    if(contPontes > 0) {
+        cout << idArestasPonte[0];
+        if(contPontes > 1) {
+            for(int i = 1; i < contPontes; i++) {
+                cout << " " << idArestasPonte[i];
+            }
+        }
+        
+    } else {
+        cout << -1;
+    }
+    cout << endl;
+
+    delete[] verticesArticulacao;
+    delete[] idArestasPonte;
 
     return 0;
 }
