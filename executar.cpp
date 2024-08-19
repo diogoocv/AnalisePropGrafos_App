@@ -691,6 +691,39 @@ queue<int>bfsArvore(int n, const vector<aresta>* LA) {
     return filaArvore;
 }
 
+// Algoritmo de Bellman Ford para calcular o caminho mínimo entre dois vértices
+// Retorna o valor do caminho mínimo
+int caminhoMinimoBellmanFord(int n, int s, int t, const vector<aresta>* LA) {
+    // 's' é o vertice de origem e 't' o destino
+
+    int* d = new int[n];        // Armazena a distância (soma dos pesos) da origem a cada vértice
+    
+    // Inicializando o vetor de distâncias
+    for(int i = 0; i < n; i++) {
+        d[i] = INFINITO;
+    }
+
+    d[s] = 0;        // Distância da origem à ela mesma é 0
+
+    // Executando o algoritmo para relaxar as arestas n-1 vezes
+    for (int i = 0; i < n-1; i++) {
+        // Percorrendo a vizinhança de todos os vértices
+        for(int u = 0; u < n; u++) {
+            for(auto uv: LA[u]) {
+                d[uv.v] = min(d[uv.v], d[u] + uv.peso);     // Tentando relaxar uv
+            }
+        }
+    }
+
+    // d[dest] representa a soma dos pesos do menor caminho da origem ao destino
+    int distOrigDestino = d[t];
+
+    delete[] d;
+
+    return distOrigDestino;
+}
+
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
