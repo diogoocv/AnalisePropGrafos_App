@@ -2,9 +2,9 @@
  *  GCC 218 - Algoritmos em Grafos
  *  Trabalho Prático
  * 
- *  Diogo Oliveira Carvalho - 202120533
- *  Lucas Meira
- *  Bruno
+ *  DIOGO OLIVEIRA CARVALHO - 202120533
+ *  LUCAS SILVA MEIRA - 202120807
+ *  BRUNO DE ALMEIDA DE PAULA
  * 
 */
 
@@ -27,6 +27,8 @@ using namespace std;
 // Cores utilizadas em problemas de coloração de grafos
 #define AZUL 3
 #define VERMELHO 4  
+
+#define INFINITO 10000000     // Definindo um valor muito grande para ser considerado "infinito"
 
 // Representa uma aresta em uma lista de adjacência
 struct aresta{
@@ -103,7 +105,7 @@ void imprimirListaInt(int qtdValores, int* Lista) {
 
 // Imprime os valores presentes em uma fila de inteiros
 // Imprime -1 caso a fila esteja vazia
-void ImprimirFilaInt(queue<int> fila) {
+void imprimirFilaInt(queue<int> fila) {
     if(!fila.empty()) {
         cout << fila.front();
         fila.pop();
@@ -118,7 +120,7 @@ void ImprimirFilaInt(queue<int> fila) {
 }
 
 // Busca em Largura utilizada para verificar a conexidade do grafo
-void bfsConexidade(int s, int* cor, vector<aresta>* LA) {              
+void bfsConexidade(int s, int* cor, const vector<aresta>* LA) {              
     queue<int> fila;        // Fila de vértices visitados durante a exploração do grafo
 
     fila.push(s);           // Adicionando o vértice de origem à fila para iniciar a busca
@@ -141,7 +143,7 @@ void bfsConexidade(int s, int* cor, vector<aresta>* LA) {
 
 // Verifica, através de uma BFS, a conexidade do grafo
 // Retorna 1 se for conexo (nao_direcionado) ou fracamente conexo (direcionado) ou 0 se for desconexo
-int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+int conexidadeGrafo(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
     int* cor = new int[n];  // Vetor de cores dos vértices
     int s = 0;              // Vértice de origem da BFS
 
@@ -197,7 +199,7 @@ int conexidadeGrafo(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 
 // Verifica, através de uma BFS, se um grafo nao_direcionado é bipartido e retorna 1 caso seja verdadeiro ou 0 caso contrário
 // Se o grafo não for nao_direcionado, retorna 0
-int bipartido(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+int bipartido(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
     int* corBFS = new int[n];       // Vetor de cores dos vértices indicando seu estado durante a BFS
     int* coloracao = new int[n];    // Vetor de cores dos vértices indicando sua partição através de sua coloração   
     int auxColoracao = AZUL;        // Variável auxiliar para colorir o grafo
@@ -261,7 +263,7 @@ int bipartido(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 }
 
 // Verifica se um grafo é euleriano, retornando 1 caso afirmativo ou 0 caso contrário
-int euleriano(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+int euleriano(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
     
     // Verificando se o grafo é desconexo
     if(conexidadeGrafo(n, tipo, LA) == 0) {
@@ -303,7 +305,7 @@ int euleriano(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 
 // Busca em profundidade recursiva para verificar se um grafo possui ciclo
 // Retorna 1 caso verdadeiro ou 0 caso contrário
-int dfsCiclo(int n, int u, int* cor, int* pai, vector<aresta>* LA) {
+int dfsCiclo(int n, int u, int* cor, int* pai, const vector<aresta>* LA) {
     cor[u] = CINZA;     // Vértice u descoberto
 
     // Percorrendo a vizinhança de u
@@ -328,7 +330,7 @@ int dfsCiclo(int n, int u, int* cor, int* pai, vector<aresta>* LA) {
 }
 
 // Verifica, através de uma DFS, se o grafo possui ciclo, retornando 1 caso verdadeiro ou 0 caso contrário
-int ciclo(int n, vector<aresta>* LA) {
+int ciclo(int n, const vector<aresta>* LA) {
     int* cor = new int[n];  // Vetor de cores dos vértices indicando seu estado durante a DFS
     int* pai = new int[n];  // Armazena o pai de cada vértice
     stack<int> pilha;       // Pilha de vértices visitados durante a exploração do grafo
@@ -357,7 +359,7 @@ int ciclo(int n, vector<aresta>* LA) {
 
 // Calcula a quantidade de componentes conexas no grafo através de uma BFS (apenas grafos nao_direcionados)
 // Retorna a quantidade de componentes conexas ou -1 caso o grafo não seja nao_direcionado
-int qtdCompConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+int qtdCompConexas(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
     int contComponentes = 0;    // Contador para verificar a quantidade de componentes no grafo
     int* cor = new int[n];      // Vetor de cores dos vértices
     int s = 0;                  // Vértice de origem da BFS
@@ -396,7 +398,7 @@ int qtdCompConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 }
 
 // DFS para o tempo de fechamento dos vértices durante a busca para encontrar a quantidade de componentes fortemente conexas
-void dfsCompFortConexas(int s, int& t, int* cor, int* f, vector<aresta>* LA) {
+void dfsCompFortConexas(int s, int& t, int* cor, int* f, const vector<aresta>* LA) {
     stack<int> pilha;   // Pilha de vértices descobertos durante a busca
 
     cor[s] = CINZA;     // Vértice s descoberto
@@ -429,7 +431,7 @@ void dfsCompFortConexas(int s, int& t, int* cor, int* f, vector<aresta>* LA) {
 
 // Calcula a quantidade de componentes fortemente conexas no grafo através de uma DFS (apenas grafos direcionados)
 // Retorna a quantidade de componentes fortemente conexas ou -1 caso o grafo não seja direcionado
-int qtdCompFortConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
+int qtdCompFortConexas(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
     vector<aresta>* LA_Transposta = new vector<aresta>[n];      // Grafo transposto do grafo passado (LA)
     int* cor = new int[n];      // Vetor de cores dos vértices
     int* f = new int[n];        // Armazena o tempo de fechamento dos vértices durante a DFS   
@@ -499,7 +501,7 @@ int qtdCompFortConexas(int n, enum TipoGrafo tipo, vector<aresta>* LA) {
 }
 
 // Algoritmo de Tarjan para detecção de arestas ponte e vértices de articulação
-void tarjan(int u, int* d, int* low, int* pai, int& t, int& qtdFilhosRaiz, int raiz, int& contArtic, int& contPontes, vector<aresta>* LA, bool* articulacoes, bool* pontes) {
+void tarjan(int u, int* d, int* low, int* pai, int& t, int& qtdFilhosRaiz, int raiz, int& contArtic, int& contPontes, const vector<aresta>* LA, bool* articulacoes, bool* pontes) {
     d[u] = t;       // Tempo de descoberta de s = t
     low[u] = t;     // Low de s = t
     t++;            // Incrementando o tempo da busca
@@ -545,7 +547,7 @@ void tarjan(int u, int* d, int* low, int* pai, int& t, int& qtdFilhosRaiz, int r
 
 // Verifica os vértices de articulação e arestas ponte do grafo (apenas nao_direcionado)
 // Calcula-os através do algoritmo de Tarjan
-void articulacoesEPontes(int n, int m, enum TipoGrafo tipo, int& contArtic, int& contPontes, int** verticesArticulacao, int** idArestasPonte, vector<aresta>* LA) {    
+void articulacoesEPontes(int n, int m, enum TipoGrafo tipo, int& contArtic, int& contPontes, int** verticesArticulacao, int** idArestasPonte, const vector<aresta>* LA) {    
     
     // Verificando se o grafo é nao_direcionado
     if(tipo == nao_direcionado) {
@@ -618,7 +620,7 @@ void articulacoesEPontes(int n, int m, enum TipoGrafo tipo, int& contArtic, int&
 }
 
 // Função auxiliar para visitar os vértices em profundidade e adicionar à fila as arestas da árvore da busca
-void dfsArvoreVisit(int u, int* cor, queue<int>& filaArvore, vector<aresta>* LA) {
+void dfsArvoreVisit(int u, int* cor, queue<int>& filaArvore, const vector<aresta>* LA) {
     cor[u] = CINZA;         // Visitando u
 
     // Percorrendo a vizinhança de u e procurando por vértices não visitados
@@ -634,7 +636,7 @@ void dfsArvoreVisit(int u, int* cor, queue<int>& filaArvore, vector<aresta>* LA)
 
 // DFS para calcular a árvore em profundidade do grafo
 // Retorna uma fila contendo o id das arestas presentes na árvore em profundidade partindo do vértice 0
-queue<int> dfsArvore(int n, vector<aresta>* LA) {
+queue<int> dfsArvore(int n, const vector<aresta>* LA) {
     int* cor = new int[n];      // Cor dos vértices durante a busca
     queue<int>  filaArvore;     // Fila que armazena o id das arestas pertencentes à arvore de profundidade
     int s = 0;                  // Vértice de origem da busca
@@ -647,12 +649,14 @@ queue<int> dfsArvore(int n, vector<aresta>* LA) {
     // Executando uma busca em profundidade a partir do vértice s
     dfsArvoreVisit(s, cor, filaArvore, LA);
 
+    delete[] cor;
+
     return filaArvore;
 }    
 
 // BFS para calcular a árvore em largura do grafo
 // Retorna uma fila contendo o id das arestas presentes na árvore em largura partindo do vértice 0
-queue<int>bfsArvore(int n, vector<aresta>* LA) {
+queue<int>bfsArvore(int n, const vector<aresta>* LA) {
     int* cor = new int[n];      // Cor dos vértices durante a busca
     queue<int> filaBfs;         // Fila que armazena os vértices visitados durante a busca
     queue<int> filaArvore;      // Fila que armazena o id das arestas pertencentes à arvore de largura
@@ -681,6 +685,8 @@ queue<int>bfsArvore(int n, vector<aresta>* LA) {
         cor[u] = PRETO;     // Fechando o vértice u
         filaBfs.pop();      // Retirando u da fila
     }
+
+    delete[] cor;
 
     return filaArvore;
 }
@@ -759,11 +765,17 @@ int main() {
 
     // (8) Retornando o id das arestas da árvore em profundindade
     queue<int> filaArvoreProfundidade = dfsArvore(n, LA);
-    ImprimirFilaInt(filaArvoreProfundidade);
+    imprimirFilaInt(filaArvoreProfundidade);
 
     // (9) Retornando o id das arestas da árvore em largura
     queue<int> filaArvoreLargura = bfsArvore(n, LA);
-    ImprimirFilaInt(filaArvoreLargura);
+    imprimirFilaInt(filaArvoreLargura);
+
+    // (10) Retornando o valor da AGM
+
+
+    // (11) Retornando o valor do caminho mínimo entre 0 e n-1
+
 
     return 0;
 }
