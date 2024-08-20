@@ -10,9 +10,10 @@
 
 #include <iostream>
 #include <vector>
-#include <queue>
+#include <sstream>
 #include <algorithm>
 #include <iterator>
+#include <queue>
 #include <stack>
 
 using namespace std;
@@ -1019,6 +1020,18 @@ int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
     string auxTipo;         // Auxiliar para ler do usuário o tipo do grafo
+    vector<int> opcoes;     // Opções selecionadas pelo usuário
+
+    // Auxiliares para ler as opções
+    string stringOpcoes;
+    int intOpcoes;
+
+    // Lendo as opções
+    getline(cin, stringOpcoes);     
+    stringstream ss(stringOpcoes);
+    while(ss >> intOpcoes) {
+        opcoes.push_back(intOpcoes);
+    }
 
     cin >> n >> m;          // Lendo as arestas do grafo
     cin >> auxTipo;         // Lendo o tipo do grafo
@@ -1041,80 +1054,164 @@ int main() {
     LA = lerGrafo(n, m, tipo, LA);
 
 
-    // (0) Retornando se um grafo é conexo
-    int conexidade = conexidadeGrafo(n, tipo, LA);
-    cout << conexidade << endl;
-
-
-    // (1) Retornando se um grafo é bipartido
-    int ehBipartido = bipartido(n, tipo, LA);
-    cout << ehBipartido << endl;
-
-
-    // (2) Retornando se um grafo é euleriano
-    int ehEuleriano = euleriano(n, tipo, conexidade, LA);
-    cout << ehEuleriano << endl;
-
-
-    // (3) Retornando se um grafo possui ciclo
-    int possuiCiclo = ciclo(n, LA);
-    cout << possuiCiclo << endl;
-
-
-    // (4) Retornando a quantidade de componentes conexas de um grafo
-    int compConexas = qtdCompConexas(n, tipo, LA);
-    cout << compConexas << endl;
-
-
-    // (5) Retornando a quantidade de componentes fortemente conexas de um grafo
-    int compFortConexas = qtdCompFortConexas(n, tipo, LA);
-    cout << compFortConexas << endl;
-
-
-    // Calculando vértices de articulação e arestas ponte
+    // Variáveis utilizadas nos algoritmos para analisar o grafo
+    int conexidade = -1;
+    int possuiCiclo = -1;
     int* verticesArticulacao = NULL;
     int* idArestasPonte = NULL;
+    bool tarjanExecutado = false;
     int contArtic = 0;
     int contPontes = 0;
-    articulacoesEPontes(n, m, tipo, contArtic, contPontes, &verticesArticulacao, &idArestasPonte, LA);
 
-    // (6) Retornando vértices de articulação
-    imprimirListaInt(contArtic, verticesArticulacao);
-    delete[] verticesArticulacao;
+    // Executando as análises no grafo de acordo com as opções escolhidas
+    for(auto op: opcoes) {
+        switch(op) {
+            case 0:
+            {
+                // (0) Retornando se um grafo é conexo
+                if(conexidade == -1) {
+                    conexidade = conexidadeGrafo(n, tipo, LA);
+                }
+                cout << conexidade << endl;
+                break;
+            }
 
+            case 1:
+            {
+                // (1) Retornando se um grafo é bipartido
+                int ehBipartido = bipartido(n, tipo, LA);
+                cout << ehBipartido << endl;
+                break;
+            }
 
-    // (7) Retornando o id das arestas ponte
-    imprimirListaInt(contPontes, idArestasPonte);
-    delete[] idArestasPonte;
+            case 2:
+            {
+                if(conexidade == -1) {
+                    conexidade = conexidadeGrafo(n, tipo, LA);
+                }
+                // (2) Retornando se um grafo é euleriano
+                int ehEuleriano = euleriano(n, tipo, conexidade, LA);
+                cout << ehEuleriano << endl;
+                break;
+            }
 
-    // (8) Retornando o id das arestas da árvore em profundindade
-    queue<int> filaArvoreProfundidade = dfsArvore(n, LA);
-    imprimirFilaInt(filaArvoreProfundidade);
+            case 3: 
+            {
+                // (3) Retornando se um grafo possui ciclo
+                if(possuiCiclo == -1) {
+                    possuiCiclo = ciclo(n, LA);
+                }
+                cout << possuiCiclo << endl;
+                break;
+            }
 
-    // (9) Retornando o id das arestas da árvore em largura
-    queue<int> filaArvoreLargura = bfsArvore(n, LA);
-    imprimirFilaInt(filaArvoreLargura);
+            case 4:
+            {
+                // (4) Retornando a quantidade de componentes conexas de um grafo
+                int compConexas = qtdCompConexas(n, tipo, LA);
+                cout << compConexas << endl;
+                break;
+            }    
 
-    // (10) Retornando o valor da AGM
-    int agm = agmPrim(n, tipo, conexidade, LA);
-    cout << agm << endl;
+            case 5:
+            {
+                // (5) Retornando a quantidade de componentes fortemente conexas de um grafo
+                int compFortConexas = qtdCompFortConexas(n, tipo, LA);
+                cout << compFortConexas << endl;
+                break;
+            }
 
-    // (11) Retornando os vértices em ordem topológica
-    queue<int> ordemTopologica = ordenacaoTopologicaKahn(n, tipo, possuiCiclo, LA);
-    imprimirFilaInt(ordemTopologica);
+            case 6:
+            {
+                if(!tarjanExecutado) {
+                    // Calculando vértices de articulação e arestas ponte
+                    articulacoesEPontes(n, m, tipo, contArtic, contPontes, &verticesArticulacao, &idArestasPonte, LA);
+                    tarjanExecutado = true;
+                }    
+                // (6) Retornando vértices de articulação
+                imprimirListaInt(contArtic, verticesArticulacao);
+                delete[] verticesArticulacao;
+                break;
+            }
 
-    // (12) Retornando o valor do caminho mínimo entre 0 e n-1
-    int caminhoMinimo = caminhoMinimoBellmanFord(n, 0, n-1, LA);
-    cout << caminhoMinimo << endl;
+            case 7:
+            {
+                if(!tarjanExecutado) {
+                    articulacoesEPontes(n, m, tipo, contArtic, contPontes, &verticesArticulacao, &idArestasPonte, LA);
+                    tarjanExecutado = true; 
+                }
+                // (7) Retornando o id das arestas ponte
+                imprimirListaInt(contPontes, idArestasPonte);
+                delete[] idArestasPonte;
+                break;
+            }
 
-    // (13) Retornando o fluxo máximo de 0 a n-1
-    int fluxoMaximo = fluxoMaximoEdmondsKarp(n, 0, n-1, tipo, LA);
-    cout << fluxoMaximo << endl;
+            case 8:
+            {
+                // (8) Retornando o id das arestas da árvore em profundindade
+                queue<int> filaArvoreProfundidade = dfsArvore(n, LA);
+                imprimirFilaInt(filaArvoreProfundidade);
+                break;
+            }
 
-    // (14) Retornando o fecho transitivo de 0
-    queue<int> fechoTransitivo = fechoWarshall(n, 0, tipo, LA);
-    imprimirFilaInt(fechoTransitivo);
+            case 9:
+            {
+                // (9) Retornando o id das arestas da árvore em largura
+                queue<int> filaArvoreLargura = bfsArvore(n, LA);
+                imprimirFilaInt(filaArvoreLargura);
+                break;
+            }
 
+            case 10:
+            {
+                if(conexidade == -1) {
+                    conexidade = conexidadeGrafo(n, tipo, LA);
+                }
+                // (10) Retornando o valor da AGM
+                int agm = agmPrim(n, tipo, conexidade, LA);
+                cout << agm << endl;
+                break;
+            }
+
+            case 11:
+            {
+                if(possuiCiclo == -1) {
+                    possuiCiclo = ciclo(n, LA);
+                }
+                // (11) Retornando os vértices em ordem topológica
+                queue<int> ordemTopologica = ordenacaoTopologicaKahn(n, tipo, possuiCiclo, LA);
+                imprimirFilaInt(ordemTopologica);
+                break;
+            }
+
+            case 12:
+            {
+                // (12) Retornando o valor do caminho mínimo entre 0 e n-1
+                int caminhoMinimo = caminhoMinimoBellmanFord(n, 0, n-1, LA);
+                cout << caminhoMinimo << endl;
+                break;
+            }
+
+            case 13:
+            {
+                // (13) Retornando o fluxo máximo de 0 a n-1
+                int fluxoMaximo = fluxoMaximoEdmondsKarp(n, 0, n-1, tipo, LA);
+                cout << fluxoMaximo << endl;
+                break;
+            }
+
+            case 14:
+            {
+                // (14) Retornando o fecho transitivo de 0
+                queue<int> fechoTransitivo = fechoWarshall(n, 0, tipo, LA);
+                imprimirFilaInt(fechoTransitivo);
+                break;
+            }
+            
+            default:
+                break;
+        }
+    }
 
     delete[] LA;
 
