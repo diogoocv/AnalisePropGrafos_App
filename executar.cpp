@@ -770,6 +770,56 @@ int agmPrim(int n, enum TipoGrafo tipo, int conexidade, const vector<aresta>* LA
     return valorArvore;
 }
 
+// Algoritmo de Kahn para calcular a ordenação topológica dos vértices priorizando a ordem lexicográfica
+// Retorna uma fila com os vértices na ordem topológica
+queue<int> ordenacaoTopologicaKahn(int n ,enum TipoGrafo tipo, int possuiCiclo, const vector<aresta>* LA) {
+    queue<int> filaOrdem;       // Armazena os vértices em ordem topológica
+
+    // Verificando se o grafo não é direcionado
+    if(tipo != direcionado) {
+        return filaOrdem;
+    }
+
+    // Verificando se o grafo possui ciclo
+    if(possuiCiclo == 1) {
+        return filaOrdem;
+    }
+
+    // inicializando o vetor de graus de entrada e o vetor de cores
+    int* grauEntrada = new int[n];
+    for(int i = 0; i < n; i++) {
+        grauEntrada[i] = 0;
+    }
+
+    // Calculando grau de entrada dos vértices
+    for(int u = 0; u < n; u++) {
+        for(auto uv: LA[u]) {
+            grauEntrada[uv.v]++;        // Incrementando o grau de entrada de v
+        }
+    }
+
+    // Procurando por vértices com grau 0 para adicionar à fila de ordem topológica
+    int contVert = 0;        // Auxiliar para contar o número de vértices adicionados à fila
+    while(contVert < n) {
+        for(int u = 0; u < n; u++) {
+            if(grauEntrada[u] == 0) {
+                filaOrdem.push(u);     // Adicionando u à fila
+                // Decrementando o grau de entrada da vizinhança de u
+                for(auto uv: LA[u]) {
+                    grauEntrada[uv.v]--;
+                }
+
+                grauEntrada[u] = -1;    // Fechando o vértice u
+                contVert++;             // Incrementando o contador de vértices na fila
+
+                u = n;                  // Finalizando esta iteração do for
+            }
+        }
+    }
+
+    return filaOrdem;
+}
+
 // Algoritmo de Bellman Ford para calcular o caminho mínimo entre dois vértices
 // Retorna o valor do caminho mínimo
 int caminhoMinimoBellmanFord(int n, int s, int t, const vector<aresta>* LA) {
@@ -890,6 +940,10 @@ int main() {
     // (10) Retornando o valor da AGM
     int agm = agmPrim(n, tipo, conexidade, LA);
     cout << agm << endl;
+
+    // (11) Retornando os vértices em ordem topológica
+    queue<int> ordemTopologica = ordenacaoTopologicaKahn(n, tipo, possuiCiclo, LA);
+    imprimirFilaInt(ordemTopologica);
 
     // (12) Retornando o valor do caminho mínimo entre 0 e n-1
     int caminhoMinimo = caminhoMinimoBellmanFord(n, 0, n-1, LA);
