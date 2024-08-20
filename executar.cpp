@@ -857,6 +857,108 @@ int caminhoMinimoBellmanFord(int n, int s, int t, const vector<aresta>* LA) {
     return distOrigDestino;
 }
 
+// Verifica se há um caminho aumentante entre o vértice v e a origem e calcula seu fluxo
+void caminhoAumentante(int s, int v, int& fluxo, int capacidade_fluxo, int* pai, int** MatFluxo) {
+    // Caso base: vértice passado é a origem
+    if(v == s) {
+        fluxo = capacidade_fluxo;
+    } else {
+        if(pai[v] != -1) {
+            // Verificando se há um caminho aumentante entre s e o pai[v]
+            caminhoAumentante(s, pai[v], fluxo, min(capacidade_fluxo, MatFluxo[pai[v]] [v]), pai, MatFluxo);
+            MatFluxo[pai[v]] [v] -= fluxo;       // Subtraindo o fluxo encontrado do arco que liga o pai de v ao próprio v
+            MatFluxo[v] [pai[v]] += fluxo;       // Adicionando o fluxo ao arco que liga v ao seu pai para representar o grafo residual
+        }
+    }
+}
+
+// Busca em profundidade para calcular o vetor de pais dos vértices considerando apenas as arestas que possuem fluxo maior que 0
+void bfsFluxoMaximo(int n, int s, int t, int* pai, int** MatFluxo, const vector<aresta>* LA) {
+    bool* descoberto = new bool[n];     // Armazena se o vértice já foi 
+    queue<int> fila;                    // Fila de vértices descobertos na busca
+
+    // Incializando as estruturas auxiliares
+    for(int i = 0; i < n; i++) {
+        pai[i] = -1;
+        descoberto[i] = false;
+    }
+
+    // Inicializando o vértice de origem
+    descoberto[s] = true;
+    fila.push(s);
+
+    // Executando a busca
+    while(!fila.empty()) {
+        int u = fila.front();   // u recebe o primeiro vértice na fila
+        fila.pop();             // retirando u da fila
+
+        // Se u for o vértice de destino, a busca se encerra
+        if(u == t) {
+            break;
+        }
+
+        for(auto uv: LA[u]) {
+            // Verificando se v não foi descoberto e a aresta uv possui fluxo
+            if(MatFluxo[u][uv.v] > 0 and !descoberto[uv.v]) {
+                descoberto[uv.v] = true;        // Visitando v
+                fila.push(uv.v);                // Enfileirando v
+                pai[uv.v] = u;                  // u é pai de v
+            }
+        }
+    }
+
+    delete[] descoberto;
+}
+
+// Algoritmo de Edmonds Karp (Aplicação do algoritmo de Ford Fulkerson) para calcular o fluxo máximo entre dois vértices
+// Retorna o valor do fluxo máximo
+int fluxoMaximoEdmondsKarp(int n, int s, int t, enum TipoGrafo tipo, const vector<aresta>* LA) {
+    // 's' é o vértice de origem e 't' o destino
+
+    // Verificando se o grafo não é direcionado
+    if(tipo != direcionado) {
+        return -1;
+    }
+
+    int** MatFluxo = new int*[n];       // Matriz que armazena o fluxo dos arcos
+    int* pai = new int[n];              // Vetor de pais dos vértices
+    int fluxoMaximo = 0;                // Armazena o fluxo máximo encontrado
+
+
+    // Adicionando os pesos iniciais dos arcos à matriz de fluxo
+    for(int u = 0; u < n; u++) {
+        MatFluxo[u] = new int[n];
+        for(auto uv: LA[u]) {
+            MatFluxo[u][uv.v] = uv.peso;
+        }
+    }
+
+    int fluxo = INFINITO;       // Auxiliar que armazena o fluxo encontrado em cada iteração
+    // Executando o algoritmo enquanto houverem caminhos aumentantes
+    while(fluxo > 0) {
+        fluxo = 0;
+
+        bfsFluxoMaximo(n, s, t, pai, MatFluxo, LA);         // Calculando os pais de cada vértice considerando apenas arestas com fluxo maior que 0
+        caminhoAumentante(s, t, fluxo, INFINITO, pai, MatFluxo);           // Verificando se há caminho aumentante e calculando seu fluxo
+
+        // Verificando se não há um caminho aumentante
+        if (fluxo == 0) {
+            break;
+        }
+        
+        fluxoMaximo += fluxo;
+    }
+
+    delete[] pai;
+    for(int i = 0; i < n; i++) {
+        delete[] MatFluxo[i];
+    }
+    delete[] MatFluxo;
+
+
+    return fluxoMaximo;
+}
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
@@ -948,6 +1050,10 @@ int main() {
     // (12) Retornando o valor do caminho mínimo entre 0 e n-1
     int caminhoMinimo = caminhoMinimoBellmanFord(n, 0, n-1, LA);
     cout << caminhoMinimo << endl;
+
+    // (13) Retornando o fluxo máximo de 0 a n-1
+    int fluxoMaximo = fluxoMaximoEdmondsKarp(n, 0, n-1, tipo, LA);
+    cout << fluxoMaximo << endl;
 
     return 0;
 }
