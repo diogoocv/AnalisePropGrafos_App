@@ -57,9 +57,9 @@ vector<aresta>* lerGrafo(int n, int m, enum TipoGrafo tipo, vector<aresta>* LA) 
         }
 
         // Evitando a leitura de arestas com id já existente
-        for(int i = 0; i < n; i++) {
-            for(auto i: LA[u]) {
-                if(i.id == id) {
+        for(int j = 0; j < n; j++) {
+            for(auto k: LA[j]) {
+                if(k.id == id) {
                     continue;
                 }
             }
@@ -90,7 +90,7 @@ vector<aresta>* lerGrafo(int n, int m, enum TipoGrafo tipo, vector<aresta>* LA) 
 // Imprime uma lista de inteiros separados por um espaço e com uma quebra de linha ao final da lista
 // Imprime -1 caso não haja nenhum valor na lista
 void imprimirListaInt(int qtdValores, int* Lista) {
-    if(qtdValores > 0) {
+    if(qtdValores > 0 and Lista != NULL) {
         cout << Lista[0];
         if(qtdValores > 1) {
             for(int i = 1; i < qtdValores; i++) {
@@ -263,10 +263,10 @@ int bipartido(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
 }
 
 // Verifica se um grafo é euleriano, retornando 1 caso afirmativo ou 0 caso contrário
-int euleriano(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
+int euleriano(int n, enum TipoGrafo tipo, int conexidade, const vector<aresta>* LA) {
     
     // Verificando se o grafo é desconexo
-    if(conexidadeGrafo(n, tipo, LA) == 0) {
+    if(conexidade == 0) {
         return 0;
     }
     
@@ -691,6 +691,85 @@ queue<int>bfsArvore(int n, const vector<aresta>* LA) {
     return filaArvore;
 }
 
+// Função auxiliar de agmPrim()
+// Retorna a o vértice com a menor chave entre os vértices não pertencentes à árvore geradora mínima parcial 
+int obtemMenorChave(int* chave, bool* pertence_agm, int n) {
+    int menorChave = INFINITO;      // Armazena a menor chave encontrada
+    int u = -1;                      // Vértice não pertencente à AGM com a menor chave
+
+    // Verificando, para todos os vértices, se sua chave é menor que a menor chave encontrada até então
+    for(int v = 0; v < n; v++) {
+        if(!pertence_agm[v] and menorChave > chave[v]) {
+            menorChave = chave[v];
+            u = v;
+        }
+    }
+    return u;
+}
+
+// Retorna uma lista com o id das arestas presentes na árvore geradora mínima
+// Retorna -1 caso o grafo não seja nao_direcionado ou seja desconexo
+int agmPrim(int n, enum TipoGrafo tipo, int conexidade, const vector<aresta>* LA) {
+    
+    // Verificando se o grafo não é nao_direcionado
+    if(tipo != nao_direcionado) {
+        return -1;
+    }
+    // Verificando se o grafo é desconexo
+   if(conexidade == 0) {
+        return -1;
+    }
+
+    int* chave = new int[n];                // Chave[v] = peso mínimo de uma aresta que conecta v a outro vértice na árvore 
+    int* pai = new int[n];                  // Vetor de pais dos vértices
+    bool* pertence_agm = new bool[n];       // Vetor que armazena true para os vértices já adicionados à arvore geradora mínima
+    int r = 0;                              // Raiz da árvore  
+    int verticesNaoExp = n;                 // Auxiliar que guarda a quantidade de vértices não explorados
+
+    // Inicializando as estruturas auxiliares
+    for(int i = 0; i < n; i++) {
+        chave[i] = INFINITO;
+        pertence_agm[i] = false;
+        pai[i] = -1;
+    }
+
+    // Inicializando a raiz
+    chave[r] = 0;   
+    pai[r] = r;
+
+    // Explorando todos os vértices, com prioridade para os que possuem menor chave entre os não visitados
+    while(verticesNaoExp > 0) {
+        int u = obtemMenorChave(chave, pertence_agm, n);    // Próximo vértice a ser explorado
+        verticesNaoExp--;                               // Decrementando a quantidade de vértices não explorados
+        pertence_agm[u] = true;                         // Vértice adicionado à AGM
+
+        // Percorrendo a lista de adjacência de u para tentar atualizar as chaves de sua vizinhança 
+        for(auto uv: LA[u]) {
+            if(!pertence_agm[uv.v]) {
+                // Verificando se o peso da aresta uv é maior que a chave de v
+                if(uv.peso < chave[uv.v]) {
+                    chave[uv.v] = uv.peso;          // Atualizando a chave de v 
+                    pai[uv.v] = u;                  // Atualizando o pai de v
+                }
+            }
+        }
+    }
+
+    // Somando o peso das arestas da AGM
+    int valorArvore = 0;
+    for(int i = 1; i < n; i++) {
+        if(pai[i] != -1) {
+            valorArvore += chave[i];
+        }
+    }
+
+    delete[] chave;
+    delete[] pai;
+    delete[] pertence_agm;
+
+    return valorArvore;
+}
+
 // Algoritmo de Bellman Ford para calcular o caminho mínimo entre dois vértices
 // Retorna o valor do caminho mínimo
 int caminhoMinimoBellmanFord(int n, int s, int t, const vector<aresta>* LA) {
@@ -720,9 +799,13 @@ int caminhoMinimoBellmanFord(int n, int s, int t, const vector<aresta>* LA) {
 
     delete[] d;
 
+    // Não existe caminho de s até t
+    if(distOrigDestino == INFINITO) {
+        return -1;
+    }
+
     return distOrigDestino;
 }
-
 
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
@@ -761,7 +844,7 @@ int main() {
 
 
     // (2) Retornando se um grafo é euleriano
-    int ehEuleriano = euleriano(n, tipo, LA);
+    int ehEuleriano = euleriano(n, tipo, conexidade, LA);
     cout << ehEuleriano << endl;
 
 
@@ -805,10 +888,12 @@ int main() {
     imprimirFilaInt(filaArvoreLargura);
 
     // (10) Retornando o valor da AGM
+    int agm = agmPrim(n, tipo, conexidade, LA);
+    cout << agm << endl;
 
-
-    // (11) Retornando o valor do caminho mínimo entre 0 e n-1
-
+    // (12) Retornando o valor do caminho mínimo entre 0 e n-1
+    int caminhoMinimo = caminhoMinimoBellmanFord(n, 0, n-1, LA);
+    cout << caminhoMinimo << endl;
 
     return 0;
 }
