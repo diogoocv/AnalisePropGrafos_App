@@ -959,6 +959,62 @@ int fluxoMaximoEdmondsKarp(int n, int s, int t, enum TipoGrafo tipo, const vecto
     return fluxoMaximo;
 }
 
+// Calcula o fecho transitivo de grafos direcionados através do algoritmo de Warshall
+// Retorna uma lista com o fecho transitivo do vértice s
+queue<int> fechoWarshall(int n, int s, enum TipoGrafo tipo, const vector<aresta>* LA) {
+    queue<int> fechoDeS;            // Fila que armazena o fecho do vértice s 
+
+    // Verificando se o grafo não é direcionado
+    if(tipo != direcionado) {
+        return fechoDeS;
+    }
+
+    int** matFecho = new int*[n];    // Matriz que armazena o fecho transitivo do grafo
+
+    // Inicializando a matriz de fecho transitivo
+    for(int u = 0; u < n; u++) {
+        matFecho[u] = new int[n];
+        
+        // Inicializando as posições com 0
+        for(int v = 0; v < n; v++) {
+            matFecho[u][v] = 0;
+        }
+    }    
+    
+    // Adicionando as arestas iniciais do grafo à matriz
+    for(int u = 0; u < n; u++) {
+        for(auto uv: LA[u]) {
+            matFecho[u][uv.v] = 1;
+        }
+        
+    }
+
+    // Calculando o fecho transitivo
+    for(int u = 0; u < n; u++) {
+        for(int v = 0; v < n; v++) {
+            for(int w = 0; w < n; w++) {
+                if(matFecho[v][u] == 1 and matFecho[u][w]) {
+                    matFecho[v][w] = 1;     // Adicionando (v,w) ao fecho
+                }
+           }
+        }
+    }
+
+    // Adicionando o fecho de s à fila
+    for(int i = 1; i < n; i++) {
+        if(matFecho[s][i] == 1) {
+            fechoDeS.push(i);
+        } 
+    }
+
+    for(int i = 0; i < n; i++) {
+        delete[] matFecho;
+    }
+    delete[] matFecho;
+
+    return fechoDeS;
+}
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
@@ -1054,6 +1110,13 @@ int main() {
     // (13) Retornando o fluxo máximo de 0 a n-1
     int fluxoMaximo = fluxoMaximoEdmondsKarp(n, 0, n-1, tipo, LA);
     cout << fluxoMaximo << endl;
+
+    // (14) Retornando o fecho transitivo de 0
+    queue<int> fechoTransitivo = fechoWarshall(n, 0, tipo, LA);
+    imprimirFilaInt(fechoTransitivo);
+
+
+    delete[] LA;
 
     return 0;
 }
