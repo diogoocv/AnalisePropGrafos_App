@@ -1017,6 +1017,234 @@ queue<int> fechoWarshall(int n, int s, enum TipoGrafo tipo, const vector<aresta>
     return fechoDeS;
 }
 
+// Verifica se um grafo é semi euleriano (possui uma trilha euleriana)
+bool ehSemiEuleriano(int n, enum TipoGrafo tipo, int conexidade, const vector<aresta>* LA) {
+    // Verificando se o grafo não é conexo
+    if(conexidade != 1) {
+        return false;
+    }
+
+    int grauImpar = 0;              // Quantidade de vértices de grau ímpar
+    int grauEntradaMaior = 0;       // Quantidade de vértices com grau de entrada maior que o grau de saída
+    int grauSaidaMaior = 0;         // Quantidade de vértices com grau de saída maior que o grau de entrada
+
+    // Percorrendo a LA
+    for(int u = 0; u < n; u++) {
+        int grau = 0;
+        
+        grau = LA[u].size();    // Calculando o grau do vértice u
+
+        // Calculando o grau de entrada de u para vértices direcionados
+        if(tipo == direcionado) {
+            int grauEntrada = 0;
+
+            for(int j = 0; j < n; j++) {
+                for(auto k : LA[j]) {
+                    if(k.v == u) {
+                        grauEntrada++;
+                    }
+                }
+            }
+
+            // Verificando se o vértice possui grau de entrada != grau saída (grafo direcionado)
+            if(grau > grauEntrada) {
+                grauSaidaMaior++;   
+            } else {
+                if(grauEntrada > grau) {
+                    grauEntradaMaior ++;
+                }
+            }
+        } else {
+            // Verificando se o grau do vértice é ímpar
+            if(grau % 2 != 0) {
+                grauImpar++;        // Incrementando quantidade de vértices de gra ímpar        
+            }
+        }
+    }
+
+    if(tipo == direcionado) {
+        // Grau de entrada e de saída dos vértices deve ser iguai ou existir exatamente um grau de entrada maior e um grau de saída maior
+        if(grauEntradaMaior != 0 or grauSaidaMaior!= 0) {
+            if(grauEntradaMaior != 1 and grauSaidaMaior != 1) {
+                return false;
+            }
+        }
+    } else {
+        // Quantidade de vértices de grau ímpar deve ser 0 ou 2 para existir uma trilha euleriana
+        if(grauImpar != 0 and grauImpar != 2) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Algoritmo de Tarjan para detectar arestas ponte
+void tarjanRecursivo(enum TipoGrafo tipo, int u, int* d, int* low, int* pai, int& t, vector<pair<pair<int,int>,bool>>* ListAdjTrilha, vector<pair<int,int>>* ponte) {
+    d[u] = t;       // Tempo de descoberta de s = t
+    low[u] = t;     // Low de s = t
+    t++;            // Incrementando o tempo da busca
+
+    // Percorrendo a lista de adjacência de u
+    for(auto uv: ListAdjTrilha[u]) {
+        // Verificando se a aresta não foi visitada durante a trilha    
+        if(uv.second == false) {
+            if(d[uv.first.second] == NAO_VISITADO) {
+                pai[uv.first.second] = u;      // Atualizando o pai de v
+
+                uv.second = true;   // Visitando a aresta (u,v)
+                // Visitando a aresta (v,u) se o grafo for nao_direcionado
+                if(tipo == nao_direcionado) {
+                    for(auto vu: ListAdjTrilha[uv.first.second]) {
+                        if(vu.first.second == u) {
+                            vu.second = true;
+                        }
+                    }
+                }
+
+                // Executando Tarjan para o vértice v (em profundidade)
+                tarjanRecursivo(tipo, uv.first.second, d, low, pai, t, ListAdjTrilha, ponte);    
+
+                // Verificando se (u,v) é uma aresta ponte
+                if(low[uv.first.second] > d[u]) {
+                    ponte[u].push_back({u, uv.first.second});       // Adicionando a aresta no vetor de pontes
+                }
+
+                low[u] = min(low[u], low[uv.first.second]);       // Atualizando o low de u caso o low de v seja menor que o dele
+            } else {
+                // Verificando se o vértice encontrado não é o pai de u
+                if(uv.first.second != pai[u]) {
+                    low[u] = min(low[u], d[uv.first.second]);     // Atualizando o low de u caso seu low seja maior que o tempo de descoberta de v e v não seja seu pai
+                }
+            }
+        } 
+    }
+}
+
+// Algoritmo de Tarjan para detectar arestas ponte
+// Retorna uma lista com as arestas ponte
+vector<pair<int,int>>* tarjanPonte(enum TipoGrafo tipo, int n, vector<pair<pair<int,int>,bool>>* ListAdjTrilha) {
+    int* low = new int[n];                              // Vetor que armazena os menores tempos de descoberta de arestas que abracam um vertice
+    int* d = new int[n];                                // Vetor que armazena o tempo de descoberta do vértice
+    int* pai = new int[n];                              // Vetor que armazena o pai de cada vértice
+    int t = 0;                                          // Auxiliar que armazena o tempo da busca
+    vector<pair<int, int>>* ponte = new vector<pair<int,int>>[n];         // Armazena as arestas ponte do grafo
+
+    // Inicializando as estruturas necessárias para encontrar as articulações
+    for(int i = 0; i < n; i++) {
+        low[i] = NAO_VISITADO;
+        d[i] = NAO_VISITADO;
+        pai[i] = -1;
+    }
+
+    // Executando o algoritmo de Tarjan até que todos os vértices sejam visitados
+    for(int u = 0; u < n; u++) {
+        if(d[u] == NAO_VISITADO) {
+            tarjanRecursivo(tipo, u, d, low, pai, t, ListAdjTrilha, ponte);
+        }
+    }   
+
+    delete[] low;
+    delete[] d;
+    delete[] pai;
+
+    return ponte;
+}
+
+// Verifica se uma aresta é válida para ser visitada no momento na trilha euleriana
+bool arestaValidaTrilhaEuler(enum TipoGrafo tipo, int u, int v, int n, vector<pair<pair<int,int>,bool>>* ListAdjTrilha) {
+    int vizinhos = 0;
+
+    for(auto uv: ListAdjTrilha[u]) {
+        // Verificando se a aresta não foi visitada
+        if(uv.second == false) {
+            vizinhos++;     // Incrementando a quantidade de vizinhos de u
+        }
+    }
+
+    // (u,v) é a única aresta não visitada saindo de u
+    if(vizinhos == 1) {
+        return true;
+    }
+    // Calculando as arestas ponte
+    vector<pair<int, int>>* ponte = tarjanPonte(tipo, n, ListAdjTrilha);
+    // Verificando se (u,v) é ponte
+    for(auto uw: ponte[u]) {
+        if(uw.second == v) {
+            return false;
+        }
+    }
+    for(auto vw: ponte[v]) {
+        if(vw.second == u) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+/*
+ *  ALGORITMO DE FLEURY PARA TRILHA EULERIANA ESTÁ RETORNANDO RESULTADO INCORRETO
+ *  CORRIGIR ANTES DE UTILIZÁ-LO
+*/
+// Algoritmo de Fleury para calcular uma trilha euleriana
+// Retorna uma lista com uma trilha euleriana ou -1 caso não exista
+vector<int> trilhaEulerianaFleury(int n, int m, enum TipoGrafo tipo, int conexidade, const vector<aresta>* LA) {
+    vector<int> trilhaEuleriana;        // Trilha euleriana
+    int contArestasVisit = 0;           // Contador de arestas visitadas na trilha
+    vector<pair<pair<int,int>,bool>>* ListAdjTrilha = new vector<pair<pair<int,int>,bool>>[n];        // Lista de adjacência da trilha euleriana
+
+    // Verificando se o grafo possui uma trilha euleriana
+    if(!ehSemiEuleriano(n, tipo, conexidade, LA)) {
+        return trilhaEuleriana;
+    }
+    
+    // Inicializando a lista de adjacência da trilha
+    for(int u = 0; u < n; u ++) {
+        for(auto uv: LA[u]) {
+            ListAdjTrilha[u].push_back({{uv.u, uv.v}, false});
+        }
+    }
+    
+
+    int s = 0;      // Vértice de origem da trilha
+
+    // Procurando por um vértice de grau ímpar para iniciar a busca
+    for (int u = 1; u <= n; u++) {
+        if (LA[u].size() % 2 != 0) {
+            s = u;
+            break;
+        }
+    }
+
+    trilhaEuleriana.push_back(s);       // Adicionando o vértice inicial à trilha
+    while(contArestasVisit < m) {    
+        for(auto uv: ListAdjTrilha[s]) {     
+            if(uv.second == false and arestaValidaTrilhaEuler(tipo, uv.first.first, uv.first.second, n, ListAdjTrilha) == true) {
+                trilhaEuleriana.push_back(uv.first.second);
+                uv.second = true;       // Aresta (u,v) visitada
+                // visitando a aresta (v,u) caso o grafo seja nao_direcionado
+                if(tipo == nao_direcionado) {
+                    for(auto vu: ListAdjTrilha[uv.first.second]) {
+                        if(vu.first.second == s) {
+                            vu.second = true;
+                        }
+                    }
+                }     
+                contArestasVisit++;     // Incrementando o contador de arestas visitadas
+                s = uv.first.second;    // Próximo vértice da trilha
+                break;
+            }
+        }
+    }
+
+    delete[] ListAdjTrilha;
+
+    return trilhaEuleriana;
+
+}
+
 int main() {
     int n = 0, m = 0;       // Número de vértices e arestas do grafo 
     enum TipoGrafo tipo;    // Tipo do grafo (direcionado ou nao_direcionado)
