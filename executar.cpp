@@ -502,20 +502,20 @@ int qtdCompFortConexas(int n, enum TipoGrafo tipo, const vector<aresta>* LA) {
 }
 
 // Algoritmo de Tarjan para detecção de arestas ponte e vértices de articulação
-void tarjan(int u, int* d, int* low, int* pai, int& t, int& qtdFilhosRaiz, int raiz, int& contArtic, int& contPontes, const vector<aresta>* LA, bool* articulacoes, bool* pontes) {
+void tarjan(int u, int* d, int* low, int* pai, int& t, int& qtdFilhosRaiz, const int raiz, int& contArtic, int& contPontes, const vector<aresta>* LA, bool* articulacoes, bool* pontes) {
     d[u] = t;       // Tempo de descoberta de s = t
     low[u] = t;     // Low de s = t
     t++;            // Incrementando o tempo da busca
 
     // Percorrendo a lista de adjacência de u
     for(auto uv: LA[u]) {
+        if(u == raiz) {
+            qtdFilhosRaiz++;        // Incrementando a quantidade de filhos da raiz
+        }
+
         if(d[uv.v] == NAO_VISITADO) {
             // Visitando vértice u
             pai[uv.v] = u;
-            // Verificando se u é a raiz
-            if(u == raiz) {
-                qtdFilhosRaiz++;        // Incrementando a quantidade de filhos da raiz
-            }
 
             // Executando Tarjan para o vértice v (em profundidade)
             tarjan(uv.v, d, low, pai, t, qtdFilhosRaiz, raiz, contArtic, contPontes, LA, articulacoes, pontes);
@@ -556,7 +556,6 @@ void articulacoesEPontes(int n, int m, enum TipoGrafo tipo, int& contArtic, int&
         int* d = new int[n];                // Vetor que armazena o tempo de descoberta do vértice
         int* pai = new int[n];              // Vetor que armazena o pai de cada vértice
         int t = 0;                          // Auxiliar que armazena o tempo da busca
-        int qtdFilhosRaiz = 0;              // Auxiliar que armazena a quantidade de filhos da raiz da busca
         bool* articulacoes = new bool[n];   // Armazena os vértices de articulação do grafo
         bool* pontes = new bool[m];         // Armazena as arestas ponte do grafo
 
@@ -578,13 +577,15 @@ void articulacoesEPontes(int n, int m, enum TipoGrafo tipo, int& contArtic, int&
         // Executando o algoritmo de Tarjan até que todos os vértices sejam visitados
         for(int i = 0; i < n; i++) {
             if(d[i] == NAO_VISITADO) {
-                qtdFilhosRaiz = 0;
-                tarjan(i, d, low, pai, t, qtdFilhosRaiz, i, contArtic, contPontes, LA, articulacoes, pontes);
+                int qtdFilhosRaiz = 0;              // Quantidade de filhos da raiz da busca
+                int raiz = i;                       // Vértice raiz da busca
+                tarjan(i, d, low, pai, t, qtdFilhosRaiz, raiz, contArtic, contPontes, LA, articulacoes, pontes);
                 
                 // Verificando se a raiz é um vértice de articulação
                 // A raiz é um vértice de articulação quando possui 2 ou mais filhos
                 if(qtdFilhosRaiz > 1) {
                     articulacoes[i] = true;
+                    contArtic++;
                 }
             }
         }
@@ -1207,7 +1208,7 @@ int main() {
                 imprimirFilaInt(fechoTransitivo);
                 break;
             }
-            
+
             default:
                 break;
         }
