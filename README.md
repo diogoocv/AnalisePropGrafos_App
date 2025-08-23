@@ -1,22 +1,20 @@
 # AnalisePropGrafos_App
-Algoritmo modular para análise de propriedades de Grafos - Algoritmos em Grafos - 2024/01 - UFLA
-DIOGO OLIVEIRA CARVALHO – 202120533
-LUCAS SILVA MEIRA - 202120807
-BRUNO DE ALMEIDA DE PAULA – 201920350
+## Algoritmo modular para análise de propriedades de Grafos - Algoritmos em Grafos - 2024/01 - UFLA
 -----------------------------------------------------------------------------------------------------------
 
-Orientações ao usuário
-    Para utilizar o programa, basta escolher as opções de funções que deseja analisar no grafo (digite uma lista de valores de 0 a 16), indicar a quantidade de vértices e arestas, respectivamente, o tipo do grafo (orientado ou nao_orientado, escritos exatamente desta maneira). Em seguida informar cada uma das arestas contendo 4 informações, sendo elas o id da aresta, o vértice de origem, o vértice de destino e, por fim, seu peso.
-    
-    Exemplo de entrada válida:
-    0 1 2 3 4 5             -> Funções escolhidas  
-    4 3                     -> Número de vértices e arestas, respectivamente
-    nao_direcionado         -> Tipo do grafo
-    0 0 1 1                 -> Arestas do grafo
-    1 0 2 1
-    2 2 3 1
+## Orientações ao usuário
 
-    Funções presentes no programa:
+Para utilizar o programa, basta escolher as opções de funções que deseja analisar no grafo (digite uma lista de valores de 0 a 16), indicar a quantidade de vértices e arestas, respectivamente, o tipo do grafo (orientado ou nao_orientado, escritos exatamente desta maneira). Em seguida informar cada uma das arestas contendo 4 informações, sendo elas o id da aresta, o vértice de origem, o vértice de destino e, por fim, seu peso.
+    
+### Exemplo de entrada válida:
+``` 0 1 2 3 4 5 ```         --> Funções escolhidas  
+``` 4 3 ```                 --> Número de vértices e arestas, respectivamente
+``` nao_direcionado ```     --> Tipo do grafo
+``` 0 0 1 1 ```             --> Aresta 1
+``` 1 0 2 1 ```             --> Aresta 2
+``` 2 2 3 1 ```             --> Aresta 3
+
+### Funções presentes no programa:
         (0)  - Conexidade: Retorna 1 se for conexo (nao_direcionado) ou fracamente conexo (direcionado) ou 0 se for desconexo.
         (1)  - Bipartido: Apenas para grafos nao_direcionados. Retorna 1 se um grafo nao_direcionado é bipartido ou 0 caso contrário.
             Se o grafo for direcionado, retorna 0.
