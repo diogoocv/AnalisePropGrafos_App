@@ -4,7 +4,11 @@
 
 ## Orientações ao usuário
 
-Para utilizar o programa, basta escolher as opções de funções que deseja analisar no grafo (digite uma lista de valores de 0 a 16), indicar a quantidade de vértices e arestas, respectivamente, o tipo do grafo (orientado ou nao_orientado, escritos exatamente desta maneira). Em seguida informar cada uma das arestas contendo 4 informações, sendo elas o id da aresta, o vértice de origem, o vértice de destino e, por fim, seu peso.
+Para utilizar o programa, basta indicar:
+``` 1: As opções de funções que deseja analisar no grafo (digite uma lista de valores de 0 a 16) ``` 
+``` 2: A quantidade de vértices e arestas, respectivamente ```
+``` 3: O tipo do grafo (orientado ou nao_orientado, escritos exatamente desta maneira) ```
+``` 4: Cada uma das arestas do grafo contendo 4 informações, sendo elas o id da aresta, o vértice de origem, o vértice de destino e, por fim, seu peso ```
     
 ### Exemplo de entrada válida:
     0 1 2 3 4 5        
